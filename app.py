@@ -4,12 +4,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 from flask_cors import CORS
+
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "https://homebasei-ntranet.vercel.app/ComplainPortal.html"}})
+# Configure CORS to allow your frontend
+CORS(app, resources={r"/*": {"origins": ["https://homebasei-ntranet.vercel.app", "http://127.0.0.1:5500"]}}, supports_credentials=True)
 
 # PostgreSQL Connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
@@ -39,6 +41,15 @@ class Complaint(db.Model):
 def home():
     return jsonify({"message": "Complaint Management System is running!"})
 
+# Handle CORS Preflight Request for POST
+@app.route('/submit_complaint', methods=['OPTIONS'])
+def handle_options():
+    response = jsonify({"message": "CORS Preflight Handled"})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "OPTIONS, POST")
+    return response, 204
+
 # Submit Complaint
 @app.route("/submit_complaint", methods=["POST"])
 def submit_complaint():
@@ -59,8 +70,14 @@ def submit_complaint():
     msg.body = f"Dear {data['name']},\n\nYour complaint has been received.\nYour Ticket Number: {ticket}.\nWe will update you once it is resolved.\n\nThank you."
     mail.send(msg)
 
-    return jsonify({"message": "Complaint submitted successfully!", "ticket_number": ticket})
+    # Include CORS headers in response
+    response = jsonify({"message": "Complaint submitted successfully!", "ticket_number": ticket})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "OPTIONS, POST")
+    return response
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render uses assigned port
     app.run(host="0.0.0.0", port=port)
+
