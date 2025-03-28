@@ -9,7 +9,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "https://homebasei-ntranet.vercel.app"}})
+CORS(app, resources={r"/*": {"origins": "https://homebasei-ntranet.vercel.app/https://homebasei-ntranet.vercel.app/ComplainPortal.html"}})
 
 # PostgreSQL Connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
