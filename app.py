@@ -11,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configure CORS to allow your frontend
-CORS(app, resources={r"/*": {"origins": ["https://homebasei-ntranet.vercel.app", "http://127.0.0.1:5500"]}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": ["https://complainform.vercel.app/", "http://127.0.0.1:5500"]}}, supports_credentials=True)
 
 # PostgreSQL Connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
