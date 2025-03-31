@@ -11,9 +11,6 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "https://complainform.vercel.app//"}})
 
-
-
-
 # PostgreSQL Connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -66,5 +63,5 @@ def submit_complaint():
 
   
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render uses assigned port
-    app.run(host="0.0.0.0", port=port)
+    from os import environ
+    app.run(host="0.0.0.0", port=int(environ.get("PORT", 5000)))
