@@ -10,7 +10,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Explicitly enable CORS for the frontend
+# Apply CORS globally for all routes with explicit origin
 CORS(app, resources={r"/*": {"origins": "https://complainform.vercel.app"}}, supports_credentials=True)
 
 # PostgreSQL Connection
@@ -41,9 +41,9 @@ class Complaint(db.Model):
 def home():
     return jsonify({"message": "Complaint Management System is running!"})
 
-# Handle Preflight Requests
+# Handle Preflight Requests explicitly
 @app.before_request
-def handle_options():
+def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({"message": "CORS Preflight Request"})
         response.headers.add("Access-Control-Allow-Origin", "https://complainform.vercel.app")
@@ -55,28 +55,25 @@ def handle_options():
 # Submit Complaint
 @app.route("/submit_complaint", methods=["POST"])
 def submit_complaint():
-    response = jsonify({"message": "Complaint submission failed"})
+    data = request.json
+    ticket = os.urandom(4).hex()  # Generates an 8-character alphanumeric ticket
 
-    if request.method == "POST":
-        data = request.json
-        ticket = os.urandom(4).hex()  # Generates an 8-character alphanumeric ticket
+    new_complaint = Complaint(
+        name=data["name"],
+        email=data["email"],
+        complaint=data["complaint"],
+        ticket_number=ticket
+    )
+    db.session.add(new_complaint)
+    db.session.commit()
 
-        new_complaint = Complaint(
-            name=data["name"],
-            email=data["email"],
-            complaint=data["complaint"],
-            ticket_number=ticket
-        )
-        db.session.add(new_complaint)
-        db.session.commit()
+    # Send Confirmation Email
+    msg = Message("Complaint Received", sender=app.config["MAIL_USERNAME"], recipients=[data["email"]])
+    msg.body = f"Dear {data['name']},\n\nYour complaint has been received.\nYour Ticket Number: {ticket}.\nWe will update you once it is resolved.\n\nThank you."
+    mail.send(msg)
 
-        # Send Confirmation Email
-        msg = Message("Complaint Received", sender=app.config["MAIL_USERNAME"], recipients=[data["email"]])
-        msg.body = f"Dear {data['name']},\n\nYour complaint has been received.\nYour Ticket Number: {ticket}.\nWe will update you once it is resolved.\n\nThank you."
-        mail.send(msg)
-
-        response = jsonify({"message": "Complaint submitted successfully", "ticket_number": ticket})
-
+    # Respond with appropriate CORS headers
+    response = jsonify({"message": "Complaint submitted successfully", "ticket_number": ticket})
     response.headers.add("Access-Control-Allow-Origin", "https://complainform.vercel.app")
     response.headers.add("Access-Control-Allow-Credentials", "true")
     return response, 200
