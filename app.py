@@ -10,14 +10,14 @@ load_dotenv()
 
 app = Flask(__name__)
 
-
-CORS(app, origins=["https://complainform.vercel.app"], supports_credentials=True)
+# Explicitly enable CORS for the frontend
+CORS(app, resources={r"/*": {"origins": "https://complainform.vercel.app"}}, supports_credentials=True)
 
 # PostgreSQL Connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-
+# Email Configuration
 app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
 app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT"))
 app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS") == "True"
@@ -41,27 +41,45 @@ class Complaint(db.Model):
 def home():
     return jsonify({"message": "Complaint Management System is running!"})
 
+# Handle Preflight Requests
+@app.before_request
+def handle_options():
+    if request.method == "OPTIONS":
+        response = jsonify({"message": "CORS Preflight Request"})
+        response.headers.add("Access-Control-Allow-Origin", "https://complainform.vercel.app")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response, 200
+
 # Submit Complaint
 @app.route("/submit_complaint", methods=["POST"])
 def submit_complaint():
-    data = request.json
-    ticket = os.urandom(4).hex()  # Generates an 8-character alphanumeric ticket
+    response = jsonify({"message": "Complaint submission failed"})
 
-    new_complaint = Complaint(
-        name=data["name"],
-        email=data["email"],
-        complaint=data["complaint"],
-        ticket_number=ticket
-    )
-    db.session.add(new_complaint)
-    db.session.commit()
+    if request.method == "POST":
+        data = request.json
+        ticket = os.urandom(4).hex()  # Generates an 8-character alphanumeric ticket
 
-    # Send Confirmation Email
-    msg = Message("Complaint Received", sender=app.config["MAIL_USERNAME"], recipients=[data["email"]])
-    msg.body = f"Dear {data['name']},\n\nYour complaint has been received.\nYour Ticket Number: {ticket}.\nWe will update you once it is resolved.\n\nThank you."
-    mail.send(msg)
+        new_complaint = Complaint(
+            name=data["name"],
+            email=data["email"],
+            complaint=data["complaint"],
+            ticket_number=ticket
+        )
+        db.session.add(new_complaint)
+        db.session.commit()
 
-    return jsonify({"message": "Complaint submitted successfully", "ticket_number": ticket}), 200
+        # Send Confirmation Email
+        msg = Message("Complaint Received", sender=app.config["MAIL_USERNAME"], recipients=[data["email"]])
+        msg.body = f"Dear {data['name']},\n\nYour complaint has been received.\nYour Ticket Number: {ticket}.\nWe will update you once it is resolved.\n\nThank you."
+        mail.send(msg)
+
+        response = jsonify({"message": "Complaint submitted successfully", "ticket_number": ticket})
+
+    response.headers.add("Access-Control-Allow-Origin", "https://complainform.vercel.app")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response, 200
 
 if __name__ == "__main__":
     from os import environ
