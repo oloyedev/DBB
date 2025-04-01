@@ -9,13 +9,15 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://complainform.vercel.app/"}})
+
+
+CORS(app, origins=["https://complainform.vercel.app"], supports_credentials=True)
 
 # PostgreSQL Connection
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Email Configuration
+
 app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
 app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT"))
 app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS") == "True"
@@ -39,8 +41,6 @@ class Complaint(db.Model):
 def home():
     return jsonify({"message": "Complaint Management System is running!"})
 
-
-
 # Submit Complaint
 @app.route("/submit_complaint", methods=["POST"])
 def submit_complaint():
@@ -61,7 +61,8 @@ def submit_complaint():
     msg.body = f"Dear {data['name']},\n\nYour complaint has been received.\nYour Ticket Number: {ticket}.\nWe will update you once it is resolved.\n\nThank you."
     mail.send(msg)
 
-  
+    return jsonify({"message": "Complaint submitted successfully", "ticket_number": ticket}), 200
+
 if __name__ == "__main__":
     from os import environ
     app.run(host="0.0.0.0", port=int(environ.get("PORT", 5000)))
