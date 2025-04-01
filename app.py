@@ -10,7 +10,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Apply CORS globally for all routes with explicit origin
+# Explicitly allow CORS for 'https://complainform.vercel.app'
 CORS(app, resources={r"/*": {"origins": "https://complainform.vercel.app"}}, supports_credentials=True)
 
 # PostgreSQL Connection
@@ -46,10 +46,10 @@ def home():
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({"message": "CORS Preflight Request"})
-        response.headers.add("Access-Control-Allow-Origin", "https://complainform.vercel.app")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.headers.add("Access-Control-Allow-Credentials", "true")
+        response.headers["Access-Control-Allow-Origin"] = "https://complainform.vercel.app"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
         return response, 200
 
 # Submit Complaint
@@ -74,8 +74,8 @@ def submit_complaint():
 
     # Respond with appropriate CORS headers
     response = jsonify({"message": "Complaint submitted successfully", "ticket_number": ticket})
-    response.headers.add("Access-Control-Allow-Origin", "https://complainform.vercel.app")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers["Access-Control-Allow-Origin"] = "https://complainform.vercel.app"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     return response, 200
 
 if __name__ == "__main__":
