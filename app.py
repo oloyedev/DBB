@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flask_migrate import Migrate
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +26,7 @@ app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db) 
 mail = Mail(app)
 
 # Complaint Model
